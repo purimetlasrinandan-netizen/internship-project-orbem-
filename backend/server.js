@@ -15,6 +15,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check endpoint
+app.get('/healthz', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // -------------------------------------------------------------
 // CUSTOMERS ENDPOINTS
 // -------------------------------------------------------------
