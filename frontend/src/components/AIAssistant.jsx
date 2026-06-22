@@ -9,6 +9,7 @@ import {
   ShieldCheck, 
   RefreshCw,
   Search,
+  DollarSign
 } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 
