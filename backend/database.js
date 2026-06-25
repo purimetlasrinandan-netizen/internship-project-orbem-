@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const crypto = require('crypto');
 const dbPath = process.env.DB_PATH || path.resolve(__dirname, 'database.sqlite');
 
 const db = new sqlite3.Database(dbPath, (err) => {
@@ -175,12 +176,43 @@ function initTables() {
       FOREIGN KEY (quotation_id) REFERENCES quotations(id) ON DELETE CASCADE
     )`);
 
+    // 11. Administrators Table
+    db.run(`CREATE TABLE IF NOT EXISTS admins (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      employee_id TEXT NOT NULL,
+      password TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+
     // Seed Data
     seedData();
   });
 }
 
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
+
 function seedData() {
+  // Seed Administrator if not already present
+  db.get("SELECT COUNT(*) as count FROM admins WHERE email = 'admin@orbemfreight.com'", (err, adminRow) => {
+    if (err) {
+      console.error('Error checking admin user:', err.message);
+    } else if (!adminRow || adminRow.count === 0) {
+      const defaultAdminPasswordHash = hashPassword('admin123');
+      db.run(
+        "INSERT INTO admins (id, name, email, employee_id, password) VALUES ('admin-default', 'System Admin', 'admin@orbemfreight.com', 'EMP-0001', ?)",
+        [defaultAdminPasswordHash],
+        (err) => {
+          if (err) console.error('Error seeding default admin:', err.message);
+          else console.log('Default administrator seeded successfully.');
+        }
+      );
+    }
+  });
+
   // Check if customers already exist
   db.get("SELECT COUNT(*) as count FROM customers", (err, row) => {
     if (err) return console.error('Error seeding check:', err.message);
@@ -251,5 +283,6 @@ module.exports = {
   db,
   run,
   get,
-  all
+  all,
+  hashPassword
 };

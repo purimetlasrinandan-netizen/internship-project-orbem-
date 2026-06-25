@@ -11,6 +11,7 @@
     "build": "npm run install:all && npm run build:frontend",
     "start": "node backend/server.js",
     "dev:backend": "npm run dev --prefix backend",
-    "dev:frontend": "npm run dev --prefix frontend"
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev": "node -e \"const { spawn } = require('child_process'); spawn('npm', ['run', 'dev:backend'], { stdio: 'inherit', shell: true }); spawn('npm', ['run', 'dev:frontend'], { stdio: 'inherit', shell: true });\""
   }
 }
