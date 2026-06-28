@@ -47,6 +47,27 @@ export default function QuoteCreator({ onQuoteCreated }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [livePricing, setLivePricing] = useState(null);
+  const [routeRate, setRouteRate] = useState(3.0);
+
+  // Fetch dynamic route rate from backend
+  useEffect(() => {
+    const fetchRouteRate = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/rates/lookup?origin=${formData.origin}&destination=${formData.destination}`);
+        if (res.ok) {
+          const data = await res.json();
+          setRouteRate(data.rate_per_kg);
+        } else {
+          // Fallback to static simulation if backend fails
+          setRouteRate(getRouteRate(formData.origin, formData.destination));
+        }
+      } catch (err) {
+        console.error('Error fetching route rate:', err);
+        setRouteRate(getRouteRate(formData.origin, formData.destination));
+      }
+    };
+    fetchRouteRate();
+  }, [formData.origin, formData.destination]);
 
   // Fetch Customers
   const fetchCustomers = async () => {
@@ -70,13 +91,6 @@ export default function QuoteCreator({ onQuoteCreated }) {
 
   // Compute live calculations
   useEffect(() => {
-    // 1. Get base rate for the route
-    const origin = formData.origin;
-    const dest = formData.destination;
-    
-    // Find rate mapping or compute dynamic rate
-    const routeRate = getRouteRate(origin, dest);
-    
     // Calculate volumetric
     const packageCount = parseInt(formData.package_count) || 1;
     const l = parseFloat(formData.length) || 0;
@@ -119,7 +133,7 @@ export default function QuoteCreator({ onQuoteCreated }) {
       discountApplied: Math.round((1 - slabDiscount) * 100)
     });
 
-  }, [formData]);
+  }, [formData, routeRate]);
 
   const getRouteRate = (origin, dest) => {
     if (origin === dest) return 1.0;

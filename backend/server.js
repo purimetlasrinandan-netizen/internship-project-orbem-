@@ -276,6 +276,26 @@ app.post('/api/quotes', async (req, res) => {
   }
 });
 
+// Lookup airline rate for origin and destination
+app.get('/api/rates/lookup', async (req, res) => {
+  const { origin, destination } = req.query;
+  if (!origin || !destination) {
+    return res.status(400).json({ error: 'Origin and destination are required.' });
+  }
+
+  try {
+    const rateRow = await get(
+      'SELECT rate_per_kg FROM airline_rates WHERE origin = ? AND destination = ? LIMIT 1',
+      [origin, destination]
+    );
+    const rate = rateRow ? rateRow.rate_per_kg : 3.0; // fallback standard rate
+    res.json({ rate_per_kg: rate });
+  } catch (error) {
+    console.error('Error looking up airline rate:', error);
+    res.status(500).json({ error: 'Failed to lookup airline rate.' });
+  }
+});
+
 // List quotations (with filters and search)
 app.get('/api/quotes', async (req, res) => {
   const { status, origin, destination, search, cargo_type } = req.query;
